@@ -116,6 +116,10 @@ pub async fn play(ctx: Context<'_>, #[description = "url or term"] song: String)
         )
     } else {
         let mut results = ctx.data().innertube.search(&song).await.unwrap();
+        if results.len() == 0 {
+            ctx.say_ephemeral("No results found for {song}.").await?;
+            return Ok(());
+        }
         RustYTDL::url(
             ctx.data().reqwest.clone(),
             ctx.data().innertube.clone(),
