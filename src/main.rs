@@ -75,7 +75,7 @@ async fn main() {
         .unwrap();
 
     if let Err(why) = client.start().await {
-        warn!("during bot startup: {why:?}")
+        warn!("during bot startup: {why:?}");
     }
 }
 
