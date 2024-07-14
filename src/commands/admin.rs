@@ -36,7 +36,7 @@ pub async fn self_role(
         .into_iter()
         .flatten()
         .collect();
-    for role in roles.iter() {
+    for role in &roles {
         if role.permissions.intersects(DANGEROUS_PERMISSIONS) {
             let intersection = role.permissions.intersection(DANGEROUS_PERMISSIONS);
             ctx.say_ephemeral(format!(
@@ -77,7 +77,7 @@ pub async fn self_role(
         let role_id = interaction.data.custom_id[index..].parse::<u64>().unwrap();
 
         let response = serenity::CreateInteractionResponseMessage::new()
-            .content(format!("Selected <@&{}>", role_id))
+            .content(format!("Selected <@&{role_id}>"))
             .ephemeral(true);
 
         interaction.create_response(

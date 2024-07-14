@@ -79,12 +79,9 @@ pub async fn play(
 
     // join the user's channel if we are currently not in one
     let mut joined = false;
-    let handler_lock = match songbird.get(guild_id) {
-        Some(handler) => handler,
-        None => {
-            joined = true;
-            songbird.join(guild_id, user_vc).await?
-        }
+    let handler_lock = if let Some(handler) = songbird.get(guild_id) { handler } else {
+        joined = true;
+        songbird.join(guild_id, user_vc).await?
     };
 
     let mut handler = handler_lock.lock().await;
@@ -137,7 +134,7 @@ pub async fn play(
             .field("Position", format!("#{} in queue", len + 1), false);
         ctx.send(poise::CreateReply::default().embed(embed)).await?;
     } else {
-        ctx.say(format!("Track added")).await?;
+        ctx.say("Track added".to_owned()).await?;
     }
 
     let track = Track::new_with_data(input.into(), data);
@@ -377,7 +374,7 @@ fn duration_hhmmss(duration: &Duration) -> String {
     let seconds = secs % 60;
     let minutes = (secs / 60) % 60;
     let hours = (secs / 60) / 60;
-    format!("{:0>2}:{:0>2}:{:0>2}", hours, minutes, seconds)
+    format!("{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
 }
 
 fn progress_bar(

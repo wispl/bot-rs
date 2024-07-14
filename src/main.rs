@@ -36,7 +36,7 @@ async fn main() {
     let token = env::var("TOKEN").expect("Missing Token");
     let subscriber = tracing_subscriber::FmtSubscriber::new();
     if let Err(why) = tracing::subscriber::set_global_default(subscriber) {
-        eprint!("Could not set up logger {:?}", why);
+        eprint!("Could not set up logger {why:?}");
     }
 
     let reqwest = reqwest::Client::new();
@@ -75,7 +75,7 @@ async fn main() {
         .unwrap();
 
     if let Err(why) = client.start().await {
-        warn!("during bot startup: {:?}", why)
+        warn!("during bot startup: {why:?}")
     }
 }
 

@@ -8,8 +8,8 @@ pub async fn paginate<U: Send + Sync + 'static, E>(
 ) -> Result<(), serenity::Error> {
     // Define some unique identifiers for the navigation buttons
     let ctx_id = ctx.id();
-    let prev_button_id = format!("{}prev", ctx_id);
-    let next_button_id = format!("{}next", ctx_id);
+    let prev_button_id = format!("{ctx_id}prev");
+    let next_button_id = format!("{ctx_id}next");
     let length = pages.len();
 
     // Send the embed with the first page as content
