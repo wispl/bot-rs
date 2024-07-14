@@ -1,0 +1,49 @@
+[package]
+name = "kirbean-rs"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+
+[dependencies]
+anyhow = "1"
+async-trait = "0.1"
+rand = "0.8"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+symphonia-core = "0.5.2"
+
+[dependencies.yinfo]
+path = "../yinfo/"
+
+[dependencies.tokio]
+version = "1"
+features = ["macros", "rt-multi-thread", "parking_lot"]
+
+[dependencies.reqwest]
+version = "0.12"
+default-features = false
+features = ["rustls-tls"]
+
+[dependencies.serenity]
+git = "https://github.com/serenity-rs/serenity"
+branch = "next"
+default-features = false
+features = ["temp_cache"]
+
+[dependencies.poise]
+git = "https://github.com/serenity-rs/poise"
+branch = "serenity-next"
+features = ["cache"]
+
+[dependencies.songbird]
+git = "https://github.com/serenity-rs/songbird"
+branch = "serenity-next"
+features = ["builtin-queue"]
+
+[dependencies.symphonia]
+version = "0.5.4"
+features = ["aac", "mp3", "ogg", "vorbis"]
