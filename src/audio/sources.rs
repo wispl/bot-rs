@@ -1,28 +1,13 @@
-use std::{
-    time::Duration,
-    borrow::Cow,
-    error::Error,
-    sync::Arc,
-};
+use std::{borrow::Cow, error::Error, sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 
-use songbird::input::{
-    AudioStream,
-    AudioStreamError,
-    AuxMetadata,
-    Compose,
-    HttpRequest,
-    Input,
-};
+use songbird::input::{AudioStream, AudioStreamError, AuxMetadata, Compose, HttpRequest, Input};
 use symphonia_core::io::MediaSource;
 
 use reqwest::{header::HeaderMap, Client};
 
-use yinfo::{
-    innertube::Innertube,
-    structs::VideoDetails,
-};
+use yinfo::{innertube::Innertube, structs::VideoDetails};
 
 struct StreamData {
     pub url: String,
@@ -39,11 +24,7 @@ pub struct RustYTDL<'a> {
 // TODO: handle playlist
 impl<'a> RustYTDL<'a> {
     #[must_use]
-    pub fn url(
-        client: Client,
-        innertube: Arc<Innertube>,
-        url: impl Into<Cow<'a, str>>
-    ) -> Self {
+    pub fn url(client: Client, innertube: Arc<Innertube>, url: impl Into<Cow<'a, str>>) -> Self {
         RustYTDL {
             client,
             innertube,

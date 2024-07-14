@@ -1,4 +1,4 @@
-use crate::{Context, Error, Data};
+use crate::{Context, Data, Error};
 
 #[poise::command(slash_command, category = "Other")]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
@@ -7,9 +7,10 @@ pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 #[poise::command(slash_command, category = "Other")]
-pub async fn echo(ctx: Context<'_>, 
-                  #[description = "message to say"] message: String)
--> Result<(), Error> {
+pub async fn echo(
+    ctx: Context<'_>,
+    #[description = "message to say"] message: String,
+) -> Result<(), Error> {
     ctx.say(message).await?;
     Ok(())
 }

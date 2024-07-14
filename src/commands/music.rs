@@ -1,8 +1,5 @@
-use std::{
-    sync::Arc,
-    time::Duration,
-};
 use anyhow::Result;
+use std::{sync::Arc, time::Duration};
 
 use async_trait::async_trait;
 
@@ -10,24 +7,15 @@ use songbird::{
     // input::{YoutubeDl, AuxMetadata, Compose},
     input::{AuxMetadata, Compose},
     tracks::Track,
-    EventContext,
     Event,
+    EventContext,
+    EventHandler,
     TrackEvent,
-    EventHandler
 };
 
-use poise::{
-    serenity_prelude as serenity,
-    CreateReply
-};
+use poise::{serenity_prelude as serenity, CreateReply};
 
-use crate::{
-    Context,
-    Command,
-    traits::ContextExt,
-    paginate::paginate,
-    audio::sources::RustYTDL,
-};
+use crate::{audio::sources::RustYTDL, paginate::paginate, traits::ContextExt, Command, Context};
 
 struct TrackData {
     metadata: AuxMetadata,
@@ -54,22 +42,32 @@ impl EventHandler for TrackEndNotifier {
 }
 
 pub fn commands() -> [Command; 9] {
-    [play(), set_loop(), clear(), skip(), pause(), nowplaying(), resume(), leave(), queue()]
+    [
+        play(),
+        set_loop(),
+        clear(),
+        skip(),
+        pause(),
+        nowplaying(),
+        resume(),
+        leave(),
+        queue(),
+    ]
 }
 
 /// Play some music
-#[poise::command(slash_command, category="Music", guild_only)]
-pub async fn play(
-    ctx: Context<'_>,
-    #[description = "url or term"] song: String
-) -> Result<()> {
+#[poise::command(slash_command, category = "Music", guild_only)]
+pub async fn play(ctx: Context<'_>, #[description = "url or term"] song: String) -> Result<()> {
     ctx.defer().await?;
 
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
 
-    let user_vc = ctx.guild().unwrap()
-        .voice_states.get(&ctx.author().id)
+    let user_vc = ctx
+        .guild()
+        .unwrap()
+        .voice_states
+        .get(&ctx.author().id)
         .and_then(|voice_state| voice_state.channel_id);
 
     let Some(user_vc) = user_vc else {
@@ -79,14 +77,16 @@ pub async fn play(
 
     // join the user's channel if we are currently not in one
     let mut joined = false;
-    let handler_lock = if let Some(handler) = songbird.get(guild_id) { handler } else {
+    let handler_lock = if let Some(handler) = songbird.get(guild_id) {
+        handler
+    } else {
         joined = true;
         songbird.join(guild_id, user_vc).await?
     };
 
     let mut handler = handler_lock.lock().await;
     let bot_vc = handler.current_channel().unwrap();
-    if  bot_vc != user_vc.into() {
+    if bot_vc != user_vc.into() {
         ctx.say_ephemeral("You are not in my voice channel").await?;
         return Ok(());
     }
@@ -112,14 +112,14 @@ pub async fn play(
         RustYTDL::url(
             ctx.data().reqwest.clone(),
             ctx.data().innertube.clone(),
-            song
+            song,
         )
     } else {
         let mut results = ctx.data().innertube.search(&song).await.unwrap();
         RustYTDL::url(
             ctx.data().reqwest.clone(),
             ctx.data().innertube.clone(),
-            results.swap_remove(0)
+            results.swap_remove(0),
         )
     };
 
@@ -130,8 +130,11 @@ pub async fn play(
 
     let len = handler.queue().current_queue().len();
     if len > 0 {
-        let embed = track_embed("Enqueued", &data)
-            .field("Position", format!("#{} in queue", len + 1), false);
+        let embed = track_embed("Enqueued", &data).field(
+            "Position",
+            format!("#{} in queue", len + 1),
+            false,
+        );
         ctx.send(poise::CreateReply::default().embed(embed)).await?;
     } else {
         ctx.say("Track added".to_owned()).await?;
@@ -143,7 +146,7 @@ pub async fn play(
 }
 
 /// Disconnect from the voice channel and clear the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn leave(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -158,7 +161,7 @@ pub async fn leave(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Gets information of the currect track
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn nowplaying(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -177,7 +180,7 @@ pub async fn nowplaying(ctx: Context<'_>) -> Result<()> {
 
         let Ok(trackstate) = track.get_info().await else {
             ctx.say_ephemeral("Oops something went wrong...").await?;
-            return Ok(())
+            return Ok(());
         };
 
         let duration = metadata.duration.unwrap_or(Duration::new(0, 0));
@@ -190,9 +193,8 @@ pub async fn nowplaying(ctx: Context<'_>) -> Result<()> {
             progress_bar(&position, &duration, 18)
         );
 
-        let footer = serenity::CreateEmbedFooter::new(
-            format!("{} left in track", duration_hhmmss(&left))
-        );
+        let footer =
+            serenity::CreateEmbedFooter::new(format!("{} left in track", duration_hhmmss(&left)));
 
         let embed = track_embed("Now Playing", &data)
             .field("Progress", progress, false)
@@ -205,7 +207,7 @@ pub async fn nowplaying(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Show all tracks in the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn queue(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -242,7 +244,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Clear all tracks in the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn clear(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -258,7 +260,7 @@ pub async fn clear(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Skip the current playing track
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn skip(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -274,7 +276,7 @@ pub async fn skip(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Pause the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn pause(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -290,7 +292,7 @@ pub async fn pause(ctx: Context<'_>) -> Result<()> {
 }
 
 /// Resume the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn resume(ctx: Context<'_>) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -312,10 +314,10 @@ pub enum LoopState {
 }
 
 /// Set the loop state of the queue
-#[poise::command(slash_command, category="Music", guild_only)]
+#[poise::command(slash_command, category = "Music", guild_only)]
 pub async fn set_loop(
     ctx: Context<'_>,
-    #[description = "new loop state"] state: LoopState
+    #[description = "new loop state"] state: LoopState,
 ) -> Result<()> {
     let guild_id = ctx.guild_id().unwrap();
     let songbird = ctx.data().songbird.clone();
@@ -328,11 +330,11 @@ pub async fn set_loop(
                 LoopState::Loop => {
                     current.enable_loop()?;
                     ctx.say("Enabled loop").await?;
-                },
+                }
                 LoopState::NoLoop => {
                     current.disable_loop()?;
                     ctx.say("Disabled loop").await?;
-                },
+                }
             }
         } else {
             ctx.say_ephemeral("Nothing is playing").await?;
@@ -344,10 +346,7 @@ pub async fn set_loop(
     Ok(())
 }
 
-fn track_embed<'a>(
-    header: &'a str,
-    data: &'a TrackData
-) -> serenity::CreateEmbed<'a> {
+fn track_embed<'a>(header: &'a str, data: &'a TrackData) -> serenity::CreateEmbed<'a> {
     let metadata = &data.metadata;
     let requester = &data.requester;
 
@@ -356,9 +355,8 @@ fn track_embed<'a>(
     let link = metadata.source_url.as_deref().unwrap_or("");
 
     let duration = metadata.duration.unwrap_or(Duration::new(0, 0));
-    let footer = serenity::CreateEmbedFooter::new(
-        format!("Duration: {}", duration_hhmmss(&duration))
-    );
+    let footer =
+        serenity::CreateEmbedFooter::new(format!("Duration: {}", duration_hhmmss(&duration)));
 
     serenity::CreateEmbed::default()
         .title(header)
@@ -378,11 +376,7 @@ fn duration_hhmmss(duration: &Duration) -> String {
 }
 
 #[allow(clippy::cast_possible_truncation)]
-fn progress_bar(
-    current: &Duration,
-    end: &Duration,
-    bar_length: usize
-) -> String {
+fn progress_bar(current: &Duration, end: &Duration, bar_length: usize) -> String {
     let percentage = current.as_secs() * 100 / end.as_secs();
     let left = (bar_length * percentage as usize) / 100;
     let right = bar_length - left;

@@ -1,14 +1,6 @@
-use poise::{
-    builtins::register_application_commands,
-    serenity_prelude as serenity,
-};
+use poise::{builtins::register_application_commands, serenity_prelude as serenity};
 
-use crate::{
-    Context,
-    Error,
-    Data,
-    traits::ContextExt,
-};
+use crate::{traits::ContextExt, Context, Data, Error};
 
 // TODO: move to a more permanent solution using button listener
 /// Create limited-time buttons where users can choose roles for themselves
@@ -17,12 +9,11 @@ use crate::{
     guild_only,
     category = "Admin",
     required_permissions = "MANAGE_ROLES",
-    required_bot_permissions = "MANAGE_ROLES",
+    required_bot_permissions = "MANAGE_ROLES"
 )]
 pub async fn self_role(
     ctx: Context<'_>,
-    #[description = "description for the embed"]
-    description: String,
+    #[description = "description for the embed"] description: String,
     role: serenity::Role,
     role1: Option<serenity::Role>,
     role2: Option<serenity::Role>,
@@ -40,10 +31,11 @@ pub async fn self_role(
         if role.permissions.intersects(DANGEROUS_PERMISSIONS) {
             let intersection = role.permissions.intersection(DANGEROUS_PERMISSIONS);
             ctx.say_ephemeral(format!(
-                    "'{}' has dangerous permissions:\n* {}",
-                    role.name,
-                    intersection.get_permission_names().join("\n* ")
-            )).await?;
+                "'{}' has dangerous permissions:\n* {}",
+                role.name,
+                intersection.get_permission_names().join("\n* ")
+            ))
+            .await?;
             return Ok(());
         }
     }
@@ -55,9 +47,12 @@ pub async fn self_role(
         .footer(serenity::CreateEmbedFooter::new("Expires in 1 day!"));
 
     let components = serenity::CreateActionRow::Buttons(
-        roles.iter()
-        .map(|role| serenity::CreateButton::new(format!("{id}:{}", role.id)).label(role.name.clone()))
-        .collect()
+        roles
+            .iter()
+            .map(|role| {
+                serenity::CreateButton::new(format!("{id}:{}", role.id)).label(role.name.clone())
+            })
+            .collect(),
     );
 
     let reply = poise::CreateReply::default()
@@ -80,13 +75,17 @@ pub async fn self_role(
             .content(format!("Selected <@&{role_id}>"))
             .ephemeral(true);
 
-        interaction.create_response(
-            ctx.http(),
-            serenity::CreateInteractionResponse::Message(response)
-        ).await?;
+        interaction
+            .create_response(
+                ctx.http(),
+                serenity::CreateInteractionResponse::Message(response),
+            )
+            .await?;
 
         let member = interaction.member.unwrap();
-        member.add_role(ctx.http(), serenity::RoleId::new(role_id), None).await?;
+        member
+            .add_role(ctx.http(), serenity::RoleId::new(role_id), None)
+            .await?;
     }
 
     Ok(())

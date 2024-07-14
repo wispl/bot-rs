@@ -1,11 +1,8 @@
-use std::{
-    sync::Arc,
-    env,
-};
+use std::{env, sync::Arc};
 
-use anyhow::{Result, Error};
-use tracing::{warn, error};
+use anyhow::{Error, Result};
 use poise::serenity_prelude as serenity;
+use tracing::{error, warn};
 
 use yinfo::{
     clients::{ClientConfig, ClientType},
@@ -17,8 +14,8 @@ use crate::traits::ContextExt;
 mod audio;
 mod commands;
 
-mod paginate;
 mod events;
+mod paginate;
 mod traits;
 
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -28,7 +25,7 @@ type FrameworkContext<'a> = poise::FrameworkContext<'a, Data, Error>;
 pub struct Data {
     reqwest: reqwest::Client,
     songbird: Arc<songbird::Songbird>,
-    innertube: Arc<Innertube>
+    innertube: Arc<Innertube>,
 }
 
 #[tokio::main]
@@ -46,13 +43,13 @@ async fn main() {
     let data = Arc::new(Data {
         reqwest,
         songbird: songbird::Songbird::serenity_from_config(
-            songbird::Config::default().use_softclip(false)
+            songbird::Config::default().use_softclip(false),
         ),
         innertube,
     });
 
-    let intents = serenity::GatewayIntents::non_privileged()
-                  | serenity::GatewayIntents::GUILD_VOICE_STATES;
+    let intents =
+        serenity::GatewayIntents::non_privileged() | serenity::GatewayIntents::GUILD_VOICE_STATES;
 
     let options = poise::FrameworkOptions {
         commands: commands::commands(),
@@ -79,11 +76,12 @@ async fn main() {
     }
 }
 
-async fn on_error(error: poise::FrameworkError<'_, Data, Error>) -> Result<()>{
+async fn on_error(error: poise::FrameworkError<'_, Data, Error>) -> Result<()> {
     match error {
         poise::FrameworkError::Command { error, ctx, .. } => {
             warn!("during command execution: {:?}", error);
-            ctx.say_ephemeral("An error occured during command execution").await?;
+            ctx.say_ephemeral("An error occured during command execution")
+                .await?;
         }
         error => poise::builtins::on_error(error).await?,
     }
