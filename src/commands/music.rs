@@ -224,7 +224,7 @@ pub async fn queue(ctx: Context<'_>) -> Result<()> {
         return Ok(());
     }
 
-    let pagecount = (queue.len() as f32 / 10.0).ceil() as usize;
+    let pagecount = queue.len().div_ceil(10);
     let mut pages: Vec<String> = Vec::with_capacity(pagecount);
     for (i, track) in queue.iter().enumerate() {
         let metadata = &track.data::<TrackData>().metadata;
@@ -377,13 +377,14 @@ fn duration_hhmmss(duration: &Duration) -> String {
     format!("{hours:0>2}:{minutes:0>2}:{seconds:0>2}")
 }
 
+#[allow(clippy::cast_possible_truncation)]
 fn progress_bar(
     current: &Duration,
     end: &Duration,
     bar_length: usize
 ) -> String {
-    let percentage = current.as_secs() as f64 / end.as_secs() as f64;
-    let left = (bar_length as f64 * percentage).floor() as usize;
+    let percentage = current.as_secs() * 100 / end.as_secs();
+    let left = (bar_length * percentage as usize) / 100;
     let right = bar_length - left;
     format!("**[{}{}]**", "#".repeat(left), "-".repeat(right))
 }
