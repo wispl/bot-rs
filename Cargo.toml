@@ -17,7 +17,7 @@ tracing-subscriber = "0.3"
 symphonia-core = "0.5.2"
 
 [dependencies.yinfo]
-path = "../yinfo/"
+git = "https://github.com/wispl/yinfo"
 
 [dependencies.tokio]
 version = "1"

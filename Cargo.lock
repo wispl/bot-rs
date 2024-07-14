@@ -3588,6 +3588,7 @@ dependencies = [
 [[package]]
 name = "yinfo"
 version = "0.1.0"
+source = "git+https://github.com/wispl/yinfo#7979a2d74ec9cecfcdb2a448b9816f42ac610f53"
 dependencies = [
  "dashmap 6.0.1",
  "once_cell",
