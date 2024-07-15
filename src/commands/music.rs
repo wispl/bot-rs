@@ -116,7 +116,7 @@ pub async fn play(ctx: Context<'_>, #[description = "url or term"] song: String)
         )
     } else {
         let mut results = ctx.data().innertube.search(&song).await.unwrap();
-        if results.len().is_empty() {
+        if results.is_empty() {
             ctx.say_ephemeral("No results found for {song}.").await?;
             return Ok(());
         }
