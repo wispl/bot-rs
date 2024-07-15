@@ -34,12 +34,27 @@ impl<'a> RustYTDL<'a> {
     }
 
     async fn query(&mut self) -> Result<StreamData, AudioStreamError> {
-        let video = self.innertube.info(&self.query).await.unwrap();
-        let format = video.best_audio().unwrap();
+        let video = self
+            .innertube
+            .info(&self.query)
+            .await
+            .map_err(|e| AudioStreamError::Fail(Box::new(e)))?;
+
+        let format = video
+            .best_audio()
+            .ok_or(AudioStreamError::Fail("No audio format found".into()))?;
+
+        let url = self
+            .innertube
+            .decipher_format(format)
+            .await
+            .map_err(|e| AudioStreamError::Fail(Box::new(e)))?;
+
         let stream_data = StreamData {
-            url: self.innertube.decipher_format(format).await.unwrap(),
+            url,
             size: format.content_length.clone(),
         };
+
         self.metadata = Some(details_to_metadata(video.video_details));
         Ok(stream_data)
     }
