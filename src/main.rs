@@ -1,19 +1,24 @@
-use std::{env, sync::Arc};
-
-use anyhow::{Error, Result};
-use poise::serenity_prelude as serenity;
-use tracing::{error, warn};
-
-use yinfo::{ClientConfig, ClientType, Innertube};
-
-use crate::traits::ContextExt;
-
 mod audio;
 mod commands;
 
 mod events;
 mod paginate;
 mod traits;
+mod shuttle;
+
+use std::sync::Arc;
+
+use anyhow::{Error, Result};
+use poise::serenity_prelude as serenity;
+use tracing::{error, warn};
+
+use yinfo::{ClientConfig, ClientType, Innertube};
+use shuttle_runtime::SecretStore;
+
+use crate::{
+    traits::ContextExt,
+    shuttle::ShuttleSerenity,
+};
 
 type Context<'a> = poise::Context<'a, Data, Error>;
 type Command = poise::Command<Data, Error>;
@@ -25,9 +30,12 @@ pub struct Data {
     innertube: Arc<Innertube>,
 }
 
-#[tokio::main]
-async fn main() {
-    let token = env::var("TOKEN").expect("Missing Token");
+#[shuttle_runtime::main]
+async fn main(#[shuttle_runtime::Secrets] secret_store: SecretStore) -> ShuttleSerenity {
+    let token = secret_store
+        .get("DISCORD_TOKEN")
+        .unwrap();
+
     let subscriber = tracing_subscriber::FmtSubscriber::new();
     if let Err(why) = tracing::subscriber::set_global_default(subscriber) {
         eprint!("Could not set up logger {why:?}");
@@ -69,16 +77,14 @@ async fn main() {
         ..poise::FrameworkOptions::default()
     };
 
-    let mut client = serenity::Client::builder(&token, intents)
+    let client = serenity::Client::builder(&token, intents)
         .voice_manager::<songbird::Songbird>(data.songbird.clone())
         .framework(poise::Framework::new(options))
         .data(data as _)
         .await
         .unwrap();
 
-    if let Err(why) = client.start().await {
-        warn!("during bot startup: {why:?}");
-    }
+    Ok(client.into())
 }
 
 async fn on_error(error: poise::FrameworkError<'_, Data, Error>) -> Result<()> {

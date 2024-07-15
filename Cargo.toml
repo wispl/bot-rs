@@ -15,6 +15,7 @@ rand = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 symphonia-core = "0.5.2"
+shuttle-runtime = "0.46.0"
 
 [dependencies.yinfo]
 git = "https://github.com/wispl/yinfo.git"
