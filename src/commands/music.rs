@@ -1,8 +1,9 @@
-use anyhow::Result;
 use std::{sync::Arc, time::Duration};
 
+use anyhow::Result;
 use async_trait::async_trait;
 
+use poise::{serenity_prelude as serenity, CreateReply};
 use songbird::{
     // input::{YoutubeDl, AuxMetadata, Compose},
     input::{AuxMetadata, Compose},
@@ -13,9 +14,7 @@ use songbird::{
     TrackEvent,
 };
 
-use poise::{serenity_prelude as serenity, CreateReply};
-
-use crate::{audio::sources::RustYTDL, paginate::paginate, traits::ContextExt, Command, Context};
+use crate::{audio::sources::YouTube, paginate::paginate, traits::ContextExt, Command, Context};
 
 struct TrackData {
     metadata: AuxMetadata,
@@ -108,25 +107,18 @@ pub async fn play(ctx: Context<'_>, #[description = "url or term"] song: String)
     //     YoutubeDl::new_search(ctx.data().reqwest.clone(), song)
     // };
 
-    let mut input = if song.starts_with("https") {
-        RustYTDL::url(
-            ctx.data().reqwest.clone(),
-            ctx.data().innertube.clone(),
-            song,
-        )
+    let url = if song.starts_with("https") {
+        song
     } else {
-        let mut results = ctx.data().innertube.search(&song).await.unwrap();
+        let mut results = ctx.data().innertube.search(&song).await?;
         if results.is_empty() {
             ctx.say_ephemeral(format!("No results found for {song}."))
                 .await?;
             return Ok(());
         }
-        RustYTDL::url(
-            ctx.data().reqwest.clone(),
-            ctx.data().innertube.clone(),
-            results.swap_remove(0),
-        )
+        results.swap_remove(0)
     };
+    let mut input = YouTube::new(&ctx.data().innertube, ctx.data().reqwest.clone(), &url).await?;
 
     let data = Arc::new(TrackData {
         metadata: input.aux_metadata().await.unwrap(),

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, error::Error, sync::Arc, time::Duration};
+use std::time::Duration;
 
 use async_trait::async_trait;
 
@@ -7,67 +7,69 @@ use symphonia_core::io::MediaSource;
 
 use reqwest::{header::HeaderMap, Client};
 
-use yinfo::{Innertube, structs::VideoDetails};
+use yinfo::{structs::VideoDetails, Innertube};
 
-struct StreamData {
-    pub url: String,
-    pub size: Option<String>,
-}
-
-pub struct RustYTDL<'a> {
+/// A similar struct to [`songbird::input::YoutubeDl`], though only for YouTube links.
+///
+/// However there are some differences. Calling [`YouTube::new()`] immediately creates a request to
+/// fetch metadata, and not on the first call to [`Compose::aux_metadata()`]. The reason for the
+/// immediate request is to find if the video is playable before enqueueing the track instead of
+/// when we reach it in the queue.
+///
+/// This also means metadata is guaranteed since it is extracted during the initial request.
+pub struct YouTube {
     client: Client,
-    innertube: Arc<Innertube>,
-    query: Cow<'a, str>,
-    metadata: Option<AuxMetadata>,
+    metadata: AuxMetadata,
+    file_size: Option<String>,
+    stream_url: String,
 }
 
-// TODO: handle playlist
-impl<'a> RustYTDL<'a> {
-    #[must_use]
-    pub fn url(client: Client, innertube: Arc<Innertube>, url: impl Into<Cow<'a, str>>) -> Self {
-        RustYTDL {
-            client,
-            innertube,
-            query: url.into(),
-            metadata: None,
-        }
-    }
-
-    async fn query(&mut self) -> Result<StreamData, AudioStreamError> {
-        let video = self
-            .innertube
-            .info(&self.query)
+impl YouTube {
+    /// Creates a new YouTube source for the given video id or url.
+    ///
+    /// The request to the extracted stream url uses the passed in client.
+    pub async fn new(
+        innertube: &Innertube,
+        client: Client,
+        url: &str,
+    ) -> Result<Self, AudioStreamError> {
+        let video = innertube
+            .info(url)
             .await
             .map_err(|e| AudioStreamError::Fail(Box::new(e)))?;
 
+        if video.playability_status.status != "OK" {
+            return Err(AudioStreamError::Fail("Video is unavailable.".into()));
+        }
+
         let format = video
             .best_audio()
-            .ok_or(AudioStreamError::Fail("No audio format found".into()))?;
-
-        let url = self
-            .innertube
+            .ok_or(AudioStreamError::Fail("No formats found".into()))?;
+        let stream_url = innertube
             .decipher_format(format)
             .await
             .map_err(|e| AudioStreamError::Fail(Box::new(e)))?;
 
-        let stream_data = StreamData {
-            url,
-            size: format.content_length.clone(),
-        };
+        let file_size = format.content_length.clone();
+        let metadata = details_to_metadata(video.video_details);
 
-        self.metadata = Some(details_to_metadata(video.video_details));
-        Ok(stream_data)
+        Ok(YouTube {
+            client,
+            metadata,
+            file_size,
+            stream_url,
+        })
     }
 }
 
-impl From<RustYTDL<'static>> for Input {
-    fn from(val: RustYTDL<'static>) -> Self {
+impl From<YouTube> for Input {
+    fn from(val: YouTube) -> Self {
         Input::Lazy(Box::new(val))
     }
 }
 
 #[async_trait]
-impl<'a> Compose for RustYTDL<'a> {
+impl Compose for YouTube {
     fn create(&mut self) -> Result<AudioStream<Box<dyn MediaSource>>, AudioStreamError> {
         Err(AudioStreamError::Unsupported)
     }
@@ -75,12 +77,11 @@ impl<'a> Compose for RustYTDL<'a> {
     async fn create_async(
         &mut self,
     ) -> Result<AudioStream<Box<dyn MediaSource>>, AudioStreamError> {
-        let stream_data = self.query().await?;
-        let content_length = stream_data.size.map(|s| s.parse::<u64>().unwrap());
+        let content_length = self.file_size.as_ref().map(|s| s.parse::<u64>().unwrap());
 
         let mut req = HttpRequest {
             client: self.client.clone(),
-            request: stream_data.url,
+            request: self.stream_url.clone(),
             headers: HeaderMap::default(),
             content_length,
         };
@@ -93,17 +94,7 @@ impl<'a> Compose for RustYTDL<'a> {
     }
 
     async fn aux_metadata(&mut self) -> Result<AuxMetadata, AudioStreamError> {
-        if let Some(meta) = self.metadata.as_ref() {
-            return Ok(meta.clone());
-        }
-
-        let _ = self.query().await;
-
-        self.metadata.clone().ok_or_else(|| {
-            let msg: Box<dyn Error + Send + Sync + 'static> =
-                "Failed to instansiate any metadata... Should be unreachable.".into();
-            AudioStreamError::Fail(msg)
-        })
+        Ok(self.metadata.clone())
     }
 }
 
