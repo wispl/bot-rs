@@ -7,7 +7,7 @@ use symphonia_core::io::MediaSource;
 
 use reqwest::{header::HeaderMap, Client};
 
-use yinfo::{innertube::Innertube, structs::VideoDetails};
+use yinfo::{Innertube, structs::VideoDetails};
 
 struct StreamData {
     pub url: String,

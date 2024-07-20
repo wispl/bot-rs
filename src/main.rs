@@ -4,10 +4,7 @@ use anyhow::{Error, Result};
 use poise::serenity_prelude as serenity;
 use tracing::{error, warn};
 
-use yinfo::{
-    clients::{ClientConfig, ClientType},
-    innertube::Innertube,
-};
+use yinfo::{ClientConfig, ClientType, Innertube};
 
 use crate::traits::ContextExt;
 
@@ -37,8 +34,15 @@ async fn main() {
     }
 
     let reqwest = reqwest::Client::new();
-    let config = ClientConfig::new(ClientType::Web);
-    let innertube = Arc::new(Innertube::new(reqwest.clone(), config).unwrap());
+    let config = yinfo::Config{
+        configs: vec![
+            ClientConfig::new(ClientType::Android),
+            ClientConfig::new(ClientType::Web),
+        ],
+        retry_limit: 1,
+        http: reqwest.clone(),
+    };
+    let innertube = Arc::new(Innertube::new(config).unwrap());
 
     let data = Arc::new(Data {
         reqwest,
