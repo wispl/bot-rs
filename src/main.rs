@@ -36,8 +36,9 @@ async fn main() {
     let reqwest = reqwest::Client::new();
     let config = yinfo::Config{
         configs: vec![
-            ClientConfig::new(ClientType::Android),
             ClientConfig::new(ClientType::Web),
+            ClientConfig::new(ClientType::Android),
+            ClientConfig::new(ClientType::WebCreator),
         ],
         retry_limit: 1,
         http: reqwest.clone(),
