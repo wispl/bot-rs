@@ -34,6 +34,7 @@ async fn main() {
     }
 
     let reqwest = reqwest::Client::new();
+    let http = Arc::new(serenity::HttpBuilder::new(&token).build());
     let config = yinfo::Config{
         configs: vec![
             ClientConfig::new(ClientType::Web),
@@ -69,7 +70,7 @@ async fn main() {
         ..poise::FrameworkOptions::default()
     };
 
-    let mut client = serenity::Client::builder(&token, intents)
+    let mut client = serenity::ClientBuilder::new_with_http(http, intents)
         .voice_manager::<songbird::Songbird>(data.songbird.clone())
         .framework(poise::Framework::new(options))
         .data(data as _)
