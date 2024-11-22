@@ -1067,6 +1067,7 @@ dependencies = [
  "poise",
  "rand",
  "reqwest",
+ "serde",
  "serenity",
  "songbird",
  "symphonia",
