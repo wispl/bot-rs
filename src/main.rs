@@ -20,6 +20,7 @@ type Command = poise::Command<Data, Error>;
 type FrameworkContext<'a> = poise::FrameworkContext<'a, Data, Error>;
 
 pub struct Data {
+    start_time: std::time::SystemTime,
     reqwest: reqwest::Client,
     songbird: Arc<songbird::Songbird>,
     innertube: Arc<Innertube>,
@@ -27,6 +28,7 @@ pub struct Data {
 
 #[tokio::main]
 async fn main() {
+    let start_time = std::time::SystemTime::now();
     let token = env::var("TOKEN").expect("Missing Token");
     let subscriber = tracing_subscriber::FmtSubscriber::new();
     if let Err(why) = tracing::subscriber::set_global_default(subscriber) {
@@ -35,7 +37,7 @@ async fn main() {
 
     let reqwest = reqwest::Client::new();
     let http = Arc::new(serenity::HttpBuilder::new(&token).build());
-    let config = yinfo::Config{
+    let config = yinfo::Config {
         configs: vec![
             ClientConfig::new(ClientType::Web),
             ClientConfig::new(ClientType::Android),
@@ -47,6 +49,7 @@ async fn main() {
     let innertube = Arc::new(Innertube::new(config).unwrap());
 
     let data = Arc::new(Data {
+        start_time,
         reqwest,
         songbird: songbird::Songbird::serenity_from_config(
             songbird::Config::default().use_softclip(false),
