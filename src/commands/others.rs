@@ -3,8 +3,6 @@ use serde::Deserialize;
 
 use crate::{traits::ContextExt, Command, Context, Error};
 
-use tracing::{error, warn};
-
 #[poise::command(slash_command, category = "Others")]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let before = std::time::SystemTime::now();

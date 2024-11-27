@@ -74,6 +74,7 @@ async fn main() {
 
     let mut client = serenity::ClientBuilder::new(token, intents)
         .voice_manager::<songbird::Songbird>(data.songbird.clone())
+        .compression(serenity::TransportCompression::Zstd)
         .framework(poise::Framework::new(options))
         .data(data as _)
         .await

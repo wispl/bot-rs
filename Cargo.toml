@@ -34,7 +34,7 @@ features = ["rustls-tls"]
 git = "https://github.com/serenity-rs/serenity"
 branch = "next"
 default-features = false
-features = ["temp_cache"]
+features = ["temp_cache", "transport_compression_zstd"]
 
 [dependencies.poise]
 git = "https://github.com/serenity-rs/poise"
