@@ -1,4 +1,4 @@
-use std::{env, sync::Arc};
+use std::sync::Arc;
 
 use anyhow::{Error, Result};
 use poise::serenity_prelude as serenity;
@@ -29,14 +29,13 @@ pub struct Data {
 #[tokio::main]
 async fn main() {
     let start_time = std::time::SystemTime::now();
-    let token = env::var("TOKEN").expect("Missing Token");
+    let token = serenity::Token::from_env("TOKEN").expect("Missing Token");
     let subscriber = tracing_subscriber::FmtSubscriber::new();
     if let Err(why) = tracing::subscriber::set_global_default(subscriber) {
         eprint!("Could not set up logger {why:?}");
     }
 
     let reqwest = reqwest::Client::new();
-    let http = Arc::new(serenity::HttpBuilder::new(&token).build());
     let config = yinfo::Config {
         configs: vec![
             ClientConfig::new(ClientType::Web),
@@ -73,7 +72,7 @@ async fn main() {
         ..poise::FrameworkOptions::default()
     };
 
-    let mut client = serenity::ClientBuilder::new_with_http(http, intents)
+    let mut client = serenity::ClientBuilder::new(token, intents)
         .voice_manager::<songbird::Songbird>(data.songbird.clone())
         .framework(poise::Framework::new(options))
         .data(data as _)

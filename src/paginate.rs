@@ -14,10 +14,13 @@ pub async fn paginate<U: Send + Sync + 'static, E>(
 
     // Send the embed with the first page as content
     let reply = {
-        let components = serenity::CreateActionRow::Buttons(vec![
-            serenity::CreateButton::new(&prev_button_id).label("←"),
-            serenity::CreateButton::new(&next_button_id).label("→"),
-        ]);
+        let components = serenity::CreateActionRow::Buttons(
+            vec![
+                serenity::CreateButton::new(&prev_button_id).label("←"),
+                serenity::CreateButton::new(&next_button_id).label("→"),
+            ]
+            .into(),
+        );
 
         poise::CreateReply::default()
             .embed(

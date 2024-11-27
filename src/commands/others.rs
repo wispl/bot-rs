@@ -1,7 +1,7 @@
 use poise::{serenity_prelude as serenity, CreateReply};
 use serde::Deserialize;
 
-use crate::{Context, Command, Error, traits::ContextExt};
+use crate::{traits::ContextExt, Command, Context, Error};
 
 use tracing::{error, warn};
 
@@ -82,7 +82,7 @@ pub async fn define(
                         .map(|d| format!("```•\n{}\n\t{}\n```", d.definition, d.example))
                         .collect::<Vec<String>>()
                         .join(""),
-                    false
+                    false,
                 )
             }));
         ctx.send(poise::CreateReply::default().embed(embed)).await?;
